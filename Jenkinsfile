@@ -1,43 +1,39 @@
 pipeline {
-  agent any
+    agent any
 
-  stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-        sh 'ls -la'
-      }
+    stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Run URL Availability Test') {
+            steps {
+                sh './mvnw clean test'
+            }
+        }
+
+        stage('Deploy') {
+            when {
+                expression {
+                    currentBuild.currentResult == 'SUCCESS'
+                }
+            }
+            steps {
+                echo 'Deploy aşaması çalışıyor...'
+                sh 'echo "DEPLOY OK"'  // şimdilik dummy
+            }
+        }
     }
 
-    stage('Build & Test (Maven Wrapper)') {
-      steps {
-        sh '''
-          set -e
-          if [ ! -f mvnw ]; then
-            echo "ERROR: mvnw dosyası repo kökünde yok."
-            exit 1
-          fi
-
-          # CRLF -> LF (Windows kaynaklı sorunlara karşı)
-          sed -i 's/\\r$//' mvnw || true
-
-          chmod +x mvnw
-          ./mvnw -B clean test
-        '''
-      }
+    post {
+        failure {
+            echo '❌ URL erişilemedi, pipeline fail oldu'
+        }
+        success {
+            echo '✅ URL erişilebilir, deploy başarılı'
+        }
     }
-
-    stage('Deploy') {
-      when { expression { currentBuild.currentResult == 'SUCCESS' } }
-      steps {
-        echo 'Deploy aşaması çalışıyor...'
-        sh 'echo "DEPLOY OK"'
-      }
-    }
-  }
-
-  post {
-    failure { echo '❌ Pipeline fail oldu' }
-    success { echo '✅ Testler geçti, deploy başarılı' }
-  }
 }
