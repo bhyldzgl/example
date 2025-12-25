@@ -1,39 +1,49 @@
 pipeline {
-    agent any
+  agent any
 
-    stages {
+  stages {
 
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Run URL Availability Test') {
-            steps {
-                sh './mvnw clean test'
-            }
-        }
-
-        stage('Deploy') {
-            when {
-                expression {
-                    currentBuild.currentResult == 'SUCCESS'
-                }
-            }
-            steps {
-                echo 'Deploy aşaması çalışıyor...'
-                sh 'echo "DEPLOY OK"'  // şimdilik dummy
-            }
-        }
+    stage('Checkout') {
+      steps {
+        checkout scm
+        sh 'pwd && ls -la'
+        sh 'ls -la demo'
+      }
     }
 
-    post {
-        failure {
-            echo '❌ URL erişilemedi, pipeline fail oldu'
+    stage('Build & Test (demo)') {
+      steps {
+        dir('demo') {
+          sh '''
+            set -e
+
+            # Windows kaynaklı CRLF ihtimaline karşı
+            sed -i 's/\\r$//' mvnw || true
+
+            chmod +x mvnw
+            ./mvnw -B clean test
+          '''
         }
-        success {
-            echo '✅ URL erişilebilir, deploy başarılı'
-        }
+      }
     }
+
+    stage('Deploy') {
+      when {
+        expression { currentBuild.currentResult == 'SUCCESS' }
+      }
+      steps {
+        echo 'Deploy aşaması çalışıyor...'
+        sh 'echo "DEPLOY OK"' // şimdilik dummy
+      }
+    }
+  }
+
+  post {
+    failure {
+      echo '❌ Pipeline fail oldu'
+    }
+    success {
+      echo '✅ Testler geçti, deploy başarılı'
+    }
+  }
 }
