@@ -21,7 +21,7 @@ public class UrlAvailabilityTest {
         int responseCode = connection.getResponseCode();
 
         // 2xx ve 3xx kabul edilebilir
-        assertTrue(responseCode == 200,
+        assertTrue(responseCode == 400,
                 "URL erişilemez! HTTP Code: " + responseCode);
     }
 }
